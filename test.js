@@ -1,6 +1,6 @@
 var opts = {};
 
-var d = new (require('index'))(opts, {
+var d = new (require('./index'))(opts, {
     on : function(x,cb){
         setTimeout(cb, 100);
     },
