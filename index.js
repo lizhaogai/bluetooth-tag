@@ -34,9 +34,6 @@ Presence.prototype.scan = function () {
             id: peripheral.uuid,
             distance: Math.abs(peripheral.rssi)
         });
-        console.log('----------------- Services -----------------');
-        console.log(peripheral.services);
-        console.log('----------------- Services -----------------');
     });
 
 };

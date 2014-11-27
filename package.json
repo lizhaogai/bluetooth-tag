@@ -1,16 +1,16 @@
 {
-  "name": "ninja-presence-bluetooth-le",
-  "version": "0.0.1",
-  "description": "NinjaBlocks Presence Driver - Bluetooth LE (Mac, Linux)",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": "",
-  "author": "Elliot Shepherd <elliot@ninjablocks.com>",
-  "license": "MIT",
-  "dependencies": {
-    "noble":"git://github.com/sandeepmistry/noble.git",
-    "ninja-presence-base": "git://github.com/elliots/ninja-presence-base"
-  }
+    "name": "presence-bluetooth-le",
+    "version": "0.0.1",
+    "description": "NinjaBlocks Presence Driver - Bluetooth LE (Mac, Linux)",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": "",
+    "author": "Elliot Shepherd <elliot@ninjablocks.com>",
+    "license": "MIT",
+    "dependencies": {
+        "noble": "git://github.com/sandeepmistry/noble.git",
+        "ninja-presence-base": "git://github.com/elliots/ninja-presence-base"
+    }
 }
