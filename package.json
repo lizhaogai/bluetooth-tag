@@ -1,5 +1,5 @@
 {
-    "name": "presence-bluetooth-le",
+    "name": "bluetooth-tag",
     "version": "0.0.1",
     "description": "NinjaBlocks Presence Driver - Bluetooth LE (Mac, Linux)",
     "main": "index.js",
