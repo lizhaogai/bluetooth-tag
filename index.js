@@ -1,4 +1,4 @@
-var Presence = require('ninja-presence-base');
+var Presence = require('presence-base');
 
 module.exports = Presence;
 
