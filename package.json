@@ -10,7 +10,7 @@
     "author": "Elliot Shepherd <elliot@ninjablocks.com>",
     "license": "MIT",
     "dependencies": {
-        "noble": "git@github.com:lizhaogai/noble.git",
-        "ninja-presence-base": "git@github.com:lizhaogai/presence-base.git"
+        "noble": "lizhaogai/noble.git",
+        "presence-base": "lizhaogai/presence-base"
     }
 }
