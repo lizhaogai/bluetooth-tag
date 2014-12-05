@@ -2,6 +2,8 @@ var BluetoothTag = require('./lib');
 
 module.exports = BluetoothTag;
 
+var peripherals = {};
+
 BluetoothTag.prototype.scan = function () {
     var self = this;
 
@@ -25,17 +27,33 @@ BluetoothTag.prototype.scan = function () {
         self._app.log.info('Stopping scan');
     });
     noble.on('discover', function (peripheral) {
-        self.see({
-            name: peripheral.advertisement.localName,
-            manufacturerData: peripheral.advertisement.manufacturerData,
-            id: peripheral.uuid,
-            distance: Math.abs(peripheral.rssi)
-        });
+        if (!peripherals[peripheral.uuid]) {
+            peripherals[peripheral.uuid] = peripheral;
+        }
+//        self.see({
+//            name: peripheral.advertisement.localName,
+//            manufacturerData: peripheral.advertisement.manufacturerData,
+//            id: peripheral.uuid,
+//            distance: Math.abs(peripheral.rssi)
+//        });
     });
 
     noble.on('data', function (data) {
-        console.log('-------------------------');
-        console.log(data);
-        console.log('-------------------------');
+        if (!data.uuid || !peripherals[data.uuid]) {
+            return;
+        }
+        if (data.data.length < 8) {
+            return;
+        }
+        var d1 = data.data.readUInt8(1);
+        var d2 = data.data.readUInt8(2);
+        var d3 = data.data.readUInt8(3);
+        var d4 = data.data.readUInt8(4);
+        var d5 = data.data.readUInt8(5);
+
+        if (d1 == 5 && d2 == 0 && d3 == 0 && d4 == 0 && d5 == 2) {
+            console.log(data.data);
+        }
+
     });
 };
