@@ -1,12 +1,8 @@
-var Presence = require('presence-base');
+var BluetoothTag = require('./lib');
 
-module.exports = Presence;
+module.exports = BluetoothTag;
 
-Presence.prototype.G = 'bluetoothle';
-Presence.prototype.V = 0;
-Presence.prototype.D = 263;
-Presence.prototype.name = 'Presence - Bluetooth LE';
-Presence.prototype.scan = function () {
+BluetoothTag.prototype.scan = function () {
     var self = this;
 
     var noble = require('noble');
@@ -31,9 +27,15 @@ Presence.prototype.scan = function () {
     noble.on('discover', function (peripheral) {
         self.see({
             name: peripheral.advertisement.localName,
+            manufacturerData: peripheral.advertisement.manufacturerData,
             id: peripheral.uuid,
             distance: Math.abs(peripheral.rssi)
         });
     });
 
+    noble.on('data', function (data) {
+        console.log('-------------------------');
+        console.log(data);
+        console.log('-------------------------');
+    });
 };

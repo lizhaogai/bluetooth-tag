@@ -1,16 +1,16 @@
 {
-    "name": "bluetooth-tag",
-    "version": "0.0.1",
-    "description": "NinjaBlocks Presence Driver - Bluetooth LE (Mac, Linux)",
-    "main": "index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": "",
-    "author": "Elliot Shepherd <elliot@ninjablocks.com>",
-    "license": "MIT",
-    "dependencies": {
-        "noble": "lizhaogai/noble.git",
-        "presence-base": "lizhaogai/presence-base"
-    }
+  "name": "bluetooth-tag",
+  "version": "0.0.1",
+  "description": "NinjaBlocks Presence Driver - Bluetooth LE (Mac, Linux)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "Elliot Shepherd <elliot@ninjablocks.com>",
+  "license": "MIT",
+  "dependencies": {
+    "noble": "lizhaogai/noble",
+    "underscore": "^1.7.0"
+  }
 }
