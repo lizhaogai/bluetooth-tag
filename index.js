@@ -51,6 +51,8 @@ BluetoothTag.prototype.scan = function () {
         var d4 = data.data.readUInt8(4);
         var d5 = data.data.readUInt8(5);
 
+        console.log(data.data);
+        console.log(d1 + '' + d2 + '' + d3 + '' + d4 + '' + d5);
         if (d1 == 5 && d2 == 0 && d3 == 0 && d4 == 0 && d5 == 2) {
             console.log(data.data);
         }
