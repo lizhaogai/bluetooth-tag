@@ -39,11 +39,11 @@ BluetoothTag.prototype.scan = function () {
         if (data.data.length < 8) {
             return;
         }
-        var d1 = data.data.readUInt8(1);
-        var d2 = data.data.readUInt8(2);
-        var d3 = data.data.readUInt8(3);
-        var d4 = data.data.readUInt8(4);
-        var d5 = data.data.readUInt8(5);
+        var d1 = data.data.readUIntBE(1);
+        var d2 = data.data.readUIntBE(2);
+        var d3 = data.data.readUIntBE(3);
+        var d4 = data.data.readUIntBE(4);
+        var d5 = data.data.readUIntBE(5);
 
         console.log(data.data);
         console.log(d1 + ' ' + d2 + ' ' + d3 + ' ' + d4 + ' ' + d5);
