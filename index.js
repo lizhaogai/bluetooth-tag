@@ -1,4 +1,6 @@
-var BluetoothTag = require('./lib');
+var BluetoothTag = require('./lib/base');
+var stream = require('stream');
+var util = require('util');
 
 module.exports = BluetoothTag;
 
@@ -49,6 +51,7 @@ BluetoothTag.prototype.scan = function () {
 
             self.processDistanceDevice(data);
             self.processPresenceDevice(data);
+            self.processSoundDevice(data);
 
             var type = data.data.readUInt8(6);
             var value = data.data.readUInt8(7);
@@ -70,6 +73,13 @@ BluetoothTag.prototype.scan = function () {
     });
 };
 
+BluetoothTag.prototype.processSoundDevice = function (data) {
+    var device = self.registerSoundDevice(data.uuid, 0, 215, [data.uuid, 0, 50002].join('_'));
+    device.parent = [data.uuid, 0, 50002].join('_');
+    device.DA = '';
+    this.sendData(device);
+};
+
 BluetoothTag.prototype.processPresenceDevice = function (data) {
     var self = this;
     var device = self.registerDevice(data.uuid, 0, 263);
@@ -81,13 +91,15 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
     if (self.timeouts[data.uuid]) {
         clearTimeout(self.timeouts[data.uuid]);
     }
+
+    self.timeouts[data.uuid] = setTimeout(function () {
+        self.presences[data.uuid] = "not present";
+        device.DA = "not present";
+        self.sendData(device);
+        delete(self.timeouts[data.uuid]);
+    }, 1000 * 60);
+
     if (DA != lastValue) {
-        self.timeouts[data.uuid] = setTimeout(function () {
-            self.presences[data.uuid] = "not present";
-            device.DA = "not present";
-            self.sendData(device);
-            delete(self.timeouts[data.uuid]);
-        }, 1000 * 60);
         self.sendData(device);
     }
 };
@@ -95,7 +107,7 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
 BluetoothTag.prototype.processDistanceDevice = function (data) {
     var device = self.registerDevice(data.uuid, 0, 10, [data.uuid, 0, 50002].join('_'));
     device.parent = [data.uuid, 0, 50002].join('_');
-    device.DA = data.rssi;
+    device.DA = '';
     this.sendData(device);
 };
 
@@ -117,6 +129,18 @@ BluetoothTag.prototype.registerDevice = function (G, V, D) {
     }
 
     var device = new PlatformDevice(G, V, D);
+    this.emit('register', device);
+    this.registeredDevices[guid(device)] = device;
+    return device;
+};
+
+BluetoothTag.prototype.registerSoundDevice = function (G, V, D) {
+    // If we already have a device for this guid, bail.
+    if (this.registeredDevices[guid(G, V, D)]) {
+        return this.registeredDevices[guid(G, V, D)];
+    }
+
+    var device = new SoundDevice(G, V, D);
     this.emit('register', device);
     this.registeredDevices[guid(device)] = device;
     return device;
@@ -149,5 +173,8 @@ function SoundDevice(G, V, D) {
 
     }
 };
+
+util.inherits(PlatformDevice, stream);
+util.inherits(SoundDevice, stream);
 
 
