@@ -40,10 +40,6 @@ BluetoothTag.prototype.scan = function () {
     });
 
     noble.on('data', function (data) {
-
-    });
-
-    noble.on('data', function (data) {
         if (!data.uuid || !self.peripherals[data.uuid]) {
             return;
         }
@@ -60,9 +56,9 @@ BluetoothTag.prototype.scan = function () {
         if (d1 == 5 && d2 == 0 && d3 == 0 && d4 == 0 && d5 == 2) {
             var btTagDevice = self.registerDevice(data.uuid, 0, 50002);
             self.sendData(btTagDevice);
+
             self.processDistanceDevice(data);
             self.processPresenceDevice(data);
-
             self.processSoundDevice(data);
 
             var type = data.data.readUInt8(6);
@@ -70,10 +66,10 @@ BluetoothTag.prototype.scan = function () {
             var device;
             if (type == 1) {
                 device = self.registerDevice(data.uuid, 0, 5);
-                device.parent = [data.uuid, 0, 50002].join('_')
+                device.P = [data.uuid, 0, 50002].join('_')
             } else if (type == 2) {
                 device = self.registerDevice(data.uuid, 0, 3);
-                device.parent = [data.uuid, 0, 50002].join('_')
+                device.P = [data.uuid, 0, 50002].join('_')
             }
             if (device) {
                 device.DA = value;
@@ -88,22 +84,23 @@ BluetoothTag.prototype.scan = function () {
                 self.processDistanceDevice(data);
             }
         }
-
-
     });
 };
 
 BluetoothTag.prototype.processSoundDevice = function (data) {
     var device = self.registerSoundDevice(data.uuid, 0, 215, [data.uuid, 0, 50002].join('_'));
-    device.parent = [data.uuid, 0, 50002].join('_');
+    device.P = [data.uuid, 0, 50002].join('_');
     device.DA = '';
-    this.sendData(device);
+    if (!device.emited) {
+        device.emited = true
+        this.sendData(device);
+    }
 };
 
 BluetoothTag.prototype.processPresenceDevice = function (data) {
     var self = this;
     var device = self.registerDevice(data.uuid, 0, 263);
-    device.parent = [data.uuid, 0, 50002].join('_');
+    device.P = [data.uuid, 0, 50002].join('_');
     device.DA = "present";
     var DA = "present";
     var lastValue = self.presences[data.uuid];
@@ -126,7 +123,7 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
 
 BluetoothTag.prototype.processDistanceDevice = function (data) {
     var device = self.registerDevice(data.uuid, 0, 10, [data.uuid, 0, 50002].join('_'));
-    device.parent = [data.uuid, 0, 50002].join('_');
+    device.P = [data.uuid, 0, 50002].join('_');
     device.DA = '';
     this.sendData(device);
 };
@@ -171,14 +168,13 @@ function guid(G, V, D) {
 }
 
 
-function PlatformDevice(G, V, D, parent) {
+function PlatformDevice(G, V, D) {
     if (!D) {
         return false;
     }
     this.V = parseInt(V) || 0;
     this.G = G.toString() || "0";
     this.D = parseInt(D) || undefined;
-    this.parent = parent;
 };
 
 function SoundDevice(G, V, D) {
