@@ -40,9 +40,14 @@ BluetoothTag.prototype.scan = function () {
     });
 
     noble.on('data', function (data) {
+
+    });
+
+    noble.on('data', function (data) {
         if (!data.uuid || !self.peripherals[data.uuid]) {
             return;
         }
+
         if (data.data.length < 8) {
             return;
         }
@@ -55,9 +60,9 @@ BluetoothTag.prototype.scan = function () {
         if (d1 == 5 && d2 == 0 && d3 == 0 && d4 == 0 && d5 == 2) {
             var btTagDevice = self.registerDevice(data.uuid, 0, 50002);
             self.sendData(btTagDevice);
-
             self.processDistanceDevice(data);
             self.processPresenceDevice(data);
+
             self.processSoundDevice(data);
 
             var type = data.data.readUInt8(6);
@@ -73,6 +78,14 @@ BluetoothTag.prototype.scan = function () {
             if (device) {
                 device.DA = value;
                 self.sendData(device);
+            }
+        } else {
+            if (self.registeredDevices[guid(data.uuid, 0, 263)]) {
+                self.processPresenceDevice(data);
+            }
+
+            if (self.registeredDevices[guid(data.uuid, 0, 10)]) {
+                self.processDistanceDevice(data);
             }
         }
 
