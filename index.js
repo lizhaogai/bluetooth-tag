@@ -1,8 +1,11 @@
 var BluetoothTag = require('./lib/base');
 var stream = require('stream');
 var util = require('util');
+var debug = require('debug')('bluetooth-tag');
 
 module.exports = BluetoothTag;
+
+var peripherals = [ ];
 
 BluetoothTag.prototype.scan = function () {
     var self = this;
@@ -29,6 +32,10 @@ BluetoothTag.prototype.scan = function () {
     noble.on('discover', function (peripheral) {
         if (!self.peripherals[peripheral.uuid]) {
             self.peripherals[peripheral.uuid] = peripheral;
+        }
+
+        if (!peripherals[peripheral.uuid]) {
+            peripherals[peripheral.uuid] = peripheral;
         }
     });
 
@@ -162,6 +169,7 @@ function PlatformDevice(G, V, D, parent) {
 };
 
 function SoundDevice(G, V, D) {
+    var self = this;
     if (!D) {
         return false;
     }
@@ -170,7 +178,35 @@ function SoundDevice(G, V, D) {
     this.D = parseInt(D) || undefined;
 
     this.write = function (dat) {
+        var uuid = this.G;
+        var peripheral = peripherals[uuid];
+        if (peripheral) {
+            peripheral.on('servicesDiscover', function (services) {
+                var serviceIndex = 0;
 
+                services[serviceIndex].on('includedServicesDiscover', function (includedServiceUuids) {
+                    this.discoverCharacteristics();
+                });
+
+                services[serviceIndex].on('characteristicsDiscover', function (characteristics) {
+                    var characteristicIndex = 0;
+                    characteristics[characteristicIndex].on('write', function () {
+                        peripheral.disconnect();
+                    });
+                    characteristics[characteristicIndex].write([7, 5, 0, 0, 0, 2, 3, dat], true, function (error) {
+                        if (error) {
+                            return debug(error);
+                        }
+                        self.emit(dat);
+                    });
+                });
+
+
+                services[serviceIndex].discoverIncludedServices();
+            });
+
+            peripheral.connect();
+        }
     }
 };
 
