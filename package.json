@@ -12,6 +12,8 @@
   "dependencies": {
     "noble": "lizhaogai/noble",
     "underscore": "^1.7.0",
-    "debug": "^2.1.0"
+    "debug": "^2.1.0",
+    "dissolve": "^0.3.3",
+    "concentrate": "^0.2.2"
   }
 }

@@ -2,6 +2,18 @@ var BluetoothTag = require('./lib/base');
 var stream = require('stream');
 var util = require('util');
 var debug = require('debug')('bluetooth-tag');
+var dissolve = require('dissolve');
+var concentrate = require('concentrate');
+
+var PORTABLE_TAG_ID = 50002;
+var PRESENCE_ID = 263;
+var SOUND_ID = 215;
+var DISTANCE_ID = 10;
+var JIGGLE_ID = 3;
+var BUTTON_ID = 5;
+
+var PRESENT = "present";
+var NOT_PRESENT = "not present";
 
 module.exports = BluetoothTag;
 
@@ -44,65 +56,79 @@ BluetoothTag.prototype.scan = function () {
             return;
         }
 
-        if (data.data.length < 8) {
-            return;
+        if (self.registeredDevices[guid(data.uuid, 0, PRESENCE_ID)]) {
+            self.processPresenceDevice(data);
         }
-        var d1 = data.data.readUInt8(1);
-        var d2 = data.data.readUInt8(2);
-        var d3 = data.data.readUInt8(3);
-        var d4 = data.data.readUInt8(4);
-        var d5 = data.data.readUInt8(5);
 
-        if (d1 == 5 && d2 == 0 && d3 == 0 && d4 == 0 && d5 == 2) {
-            var btTagDevice = self.registerDevice(data.uuid, 0, 50002);
+        if (self.registeredDevices[guid(data.uuid, 0, DISTANCE_ID)]) {
+            self.processDistanceDevice(data);
+        }
+
+        var parser = dissolve().loop(function (end) {
+            this.uint8("lenght").tap(function () {
+                if (!this.vars.length || this.vars.length < 0x07) {
+                    end();
+                }
+                this.uint8("d1").uint8("d2").unit("d3").unit("d4").unit("d5");
+            }).tap(function () {
+                var did = this.vars.d1 + '' + this.vars.d2 + '' + this.vars.d3 + '' + this.vars.d4 + '' + this.vars.d4;
+                if (did == (PORTABLE_TAG_ID + '')) {
+                    delete this.vars.d1;
+                    delete this.vars.d2;
+                    delete this.vars.d3;
+                    delete this.vars.d4;
+                    delete this.vars.d5;
+                    this.vars.pid = PORTABLE_TAG_ID;
+                    this.uint8("did").uint8('value');
+                }
+            }).tap(function () {
+                if (this.vars.pid == PORTABLE_TAG_ID) {
+                    if (this.vars.did == 1) {
+                        this.vars.did = BUTTON_ID;
+                    } else if (this.vars.did == 2) {
+                        this.vars.did = JIGGLE_ID;
+                    }
+
+                    this.push(this.vars);
+                    this.vars = {};
+                }
+            });
+        });
+
+        parser.on('data', function (obj) {
+            var btTagDevice = self.registerDevice(data.uuid, 0, obj.pid);
             self.sendData(btTagDevice);
 
             self.processDistanceDevice(data);
             self.processPresenceDevice(data);
             self.processSoundDevice(data);
 
-            var type = data.data.readUInt8(6);
-            var value = data.data.readUInt8(7);
-            var device;
-            if (type == 1) {
-                device = self.registerDevice(data.uuid, 0, 5);
-                device.P = [data.uuid, 0, 50002].join('_')
-            } else if (type == 2) {
-                device = self.registerDevice(data.uuid, 0, 3);
-                device.P = [data.uuid, 0, 50002].join('_')
-            }
-            if (device) {
-                device.DA = value;
+            if (obj.did) {
+                var device = self.registerDevice(data.uuid, 0, obj.did);
+                device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_')
+                device.DA = obj.value;
                 self.sendData(device);
             }
-        } else {
-            if (self.registeredDevices[guid(data.uuid, 0, 263)]) {
-                self.processPresenceDevice(data);
-            }
-
-            if (self.registeredDevices[guid(data.uuid, 0, 10)]) {
-                self.processDistanceDevice(data);
-            }
-        }
+        });
     });
 };
 
 BluetoothTag.prototype.processSoundDevice = function (data) {
-    var device = self.registerSoundDevice(data.uuid, 0, 215, [data.uuid, 0, 50002].join('_'));
-    device.P = [data.uuid, 0, 50002].join('_');
+    var device = self.registerSoundDevice(data.uuid, 0, SOUND_ID);
+    device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
     device.DA = '';
     if (!device.emited) {
-        device.emited = true
+        device.emited = true;
         this.sendData(device);
     }
 };
 
 BluetoothTag.prototype.processPresenceDevice = function (data) {
     var self = this;
-    var device = self.registerDevice(data.uuid, 0, 263);
-    device.P = [data.uuid, 0, 50002].join('_');
-    device.DA = "present";
-    var DA = "present";
+    var device = self.registerDevice(data.uuid, 0, PRESENCE_ID);
+    device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
+    device.DA = PRESENT;
+    var DA = PRESENT;
     var lastValue = self.presences[data.uuid];
 
     if (self.timeouts[data.uuid]) {
@@ -110,8 +136,8 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
     }
 
     self.timeouts[data.uuid] = setTimeout(function () {
-        self.presences[data.uuid] = "not present";
-        device.DA = "not present";
+        self.presences[data.uuid] = NOT_PRESENT;
+        device.DA = NOT_PRESENT;
         self.sendData(device);
         delete(self.timeouts[data.uuid]);
     }, 1000 * 60);
@@ -122,8 +148,8 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
 };
 
 BluetoothTag.prototype.processDistanceDevice = function (data) {
-    var device = self.registerDevice(data.uuid, 0, 10, [data.uuid, 0, 50002].join('_'));
-    device.P = [data.uuid, 0, 50002].join('_');
+    var device = self.registerDevice(data.uuid, 0, DISTANCE_ID);
+    device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
     device.DA = '';
     this.sendData(device);
 };
@@ -140,7 +166,6 @@ BluetoothTag.prototype.sendData = function (deviceObj) {
 };
 
 BluetoothTag.prototype.registerDevice = function (G, V, D) {
-    // If we already have a device for this guid, bail.
     if (this.registeredDevices[guid(G, V, D)]) {
         return this.registeredDevices[guid(G, V, D)];
     }
@@ -152,7 +177,6 @@ BluetoothTag.prototype.registerDevice = function (G, V, D) {
 };
 
 BluetoothTag.prototype.registerSoundDevice = function (G, V, D) {
-    // If we already have a device for this guid, bail.
     if (this.registeredDevices[guid(G, V, D)]) {
         return this.registeredDevices[guid(G, V, D)];
     }
@@ -206,11 +230,11 @@ function SoundDevice(G, V, D) {
                         if (error) {
                             return debug(error);
                         }
-                        self.emit(dat);
+                        var Concentrate = new concentrate();
+                        var payload = Concentrate.uint8(7).string(PORTABLE_TAG_ID, "utf8").uint8(3).uint8(dat).result();
+                        characteristics[characteristicIndex].write(payload, true);
                     });
                 });
-
-
                 services[serviceIndex].discoverIncludedServices();
             });
 
