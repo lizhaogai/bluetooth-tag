@@ -67,9 +67,10 @@ BluetoothTag.prototype.scan = function () {
         var parser = dissolve().loop(function (end) {
             this.uint8("lenght").tap(function () {
                 if (!this.vars.length || this.vars.length < 0x07) {
+                    self._app.log.debug('not enough length');
                     end();
                 }
-                this.uint8("d1").uint8("d2").unit("d3").unit("d4").unit("d5");
+                this.uint8("d1").uint8("d2").uint8("d3").uint8("d4").uint8("d5");
             }).tap(function () {
                 var did = this.vars.d1 + '' + this.vars.d2 + '' + this.vars.d3 + '' + this.vars.d4 + '' + this.vars.d4;
                 if (did == (PORTABLE_TAG_ID + '')) {
@@ -80,6 +81,8 @@ BluetoothTag.prototype.scan = function () {
                     delete this.vars.d5;
                     this.vars.pid = PORTABLE_TAG_ID;
                     this.uint8("did").uint8('value');
+                } else {
+                    self._app.log.debug('not support data');
                 }
             }).tap(function () {
                 if (this.vars.pid == PORTABLE_TAG_ID) {
@@ -110,6 +113,8 @@ BluetoothTag.prototype.scan = function () {
                 self.sendData(device);
             }
         });
+
+        parser.write(data.data);
     });
 };
 
