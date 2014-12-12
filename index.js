@@ -176,6 +176,27 @@ BluetoothTag.prototype.registerDevice = function (G, V, D) {
     return device;
 };
 
+BluetoothTag.prototype.restorePersistentDevices = function () {
+    var self = this;
+    var persistentDevices = self._opts.persistentDevices;
+    if (!persistentDevices) {
+        return;
+    }
+    persistentDevices.forEach(function (persistentGuid) {
+
+        var deviceAttributes = persistentGuid.split('_');
+        if (deviceAttributes.length < 3) {
+            return;
+        }
+
+        self.registerDevice(deviceAttributes[0]
+            , deviceAttributes[1]
+            , deviceAttributes[2]
+        );
+
+    });
+};
+
 BluetoothTag.prototype.registerSoundDevice = function (G, V, D) {
     if (this.registeredDevices[guid(G, V, D)]) {
         return this.registeredDevices[guid(G, V, D)];
