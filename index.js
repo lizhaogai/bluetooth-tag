@@ -70,8 +70,7 @@ BluetoothTag.prototype.scan = function () {
         }
 
         var parser = dissolve().loop(function (end) {
-            this.uint8("lenght").tap(function () {
-                self._app.log.debug(data.data);
+            this.uint8("length").tap(function () {
                 if (!this.vars.length || this.vars.length < 0x07) {
                     self._app.log.debug('not enough length');
                     end();
@@ -247,7 +246,20 @@ function SoundDevice(G, V, D) {
         var uuid = this.G;
         var peripheral = peripherals[uuid];
         if (peripheral) {
+
+            peripheral.on('connect', function () {
+                this.updateRssi();
+            });
+
+            peripheral.on('disconnect', function () {
+            });
+
+            peripheral.on('rssiUpdate', function (rssi) {
+                this.discoverServices();
+            });
+
             peripheral.on('servicesDiscover', function (services) {
+                debug("Service Discover");
                 var serviceIndex = 0;
 
                 services[serviceIndex].on('includedServicesDiscover', function (includedServiceUuids) {
@@ -255,8 +267,10 @@ function SoundDevice(G, V, D) {
                 });
 
                 services[serviceIndex].on('characteristicsDiscover', function (characteristics) {
+                    debug("Characteristics Discover");
                     var characteristicIndex = 0;
                     characteristics[characteristicIndex].on('write', function () {
+                        debug("Write value");
                         peripheral.disconnect();
                     });
                     var Concentrate = new concentrate();

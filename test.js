@@ -5,7 +5,8 @@ var d = new (require('./index'))(opts, {
         setTimeout(cb, 100);
     },
     log: {
-        debug: console.log,
+        debug: function () {
+        },
         info: console.log,
         warn: console.log,
         error: console.log
@@ -14,9 +15,18 @@ var d = new (require('./index'))(opts, {
 
 d.emit = function (channel, value) {
     console.log('Driver.emit', channel, value);
+
+    var sendSoundCommand = true;
     if (channel == 'register') {
         value.emit = function (channel, value) {
-            console.log('Device.emit', channel, value);
+//            console.log('Device.emit', channel, value);
+            if (value && value.D == 215) {
+                if (sendSoundCommand) {
+                    console.log('Send Sound Command');
+                    value.write(1);
+                    sendSoundCommand = false;
+                }
+            }
         };
     }
 };
@@ -24,27 +34,3 @@ d.emit = function (channel, value) {
 d.save = function () {
     console.log('Saved opts', opts);
 };
-
-function delay(interval) {
-    var timeout = 0;
-
-    return function (time, callback) {
-        if (typeof time === "function") {
-            callback = time;
-            time = null;
-        }
-        timeout += (time || interval);
-        setTimeout(callback, timeout);
-    };
-};
-
-delay(50000)(function () {
-    var registeredDevices = d.registeredDevices;
-
-    for (var guid in registeredDevices) {
-        var device = registeredDevices[guid];
-        if (device.D == 215) {
-            device.write(1);
-        }
-    }
-});
