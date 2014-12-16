@@ -4,6 +4,7 @@ var util = require('util');
 var debug = require('debug')('bluetooth-tag');
 var dissolve = require('dissolve');
 var concentrate = require('concentrate');
+var child = require('child_process');
 
 var PORTABLE_TAG_ID = 50002;
 var PRESENCE_ID = 263;
@@ -31,6 +32,10 @@ BluetoothTag.prototype.scan = function () {
             noble.startScanning();
         } else {
             noble.stopScanning();
+
+//            child.exec('hciconfig', function (err, stdout, stderr) {
+//                self._app.log.debug(stdout);
+//            });
         }
     });
 
@@ -66,13 +71,15 @@ BluetoothTag.prototype.scan = function () {
 
         var parser = dissolve().loop(function (end) {
             this.uint8("lenght").tap(function () {
+                self._app.log.debug(data.data);
                 if (!this.vars.length || this.vars.length < 0x07) {
                     self._app.log.debug('not enough length');
                     end();
+                } else {
+                    this.uint8("d1").uint8("d2").uint8("d3").uint8("d4").uint8("d5");
                 }
-                this.uint8("d1").uint8("d2").uint8("d3").uint8("d4").uint8("d5");
             }).tap(function () {
-                var did = this.vars.d1 + '' + this.vars.d2 + '' + this.vars.d3 + '' + this.vars.d4 + '' + this.vars.d4;
+                var did = this.vars.d1 + '' + this.vars.d2 + '' + this.vars.d3 + '' + this.vars.d4 + '' + this.vars.d5;
                 if (did == (PORTABLE_TAG_ID + '')) {
                     delete this.vars.d1;
                     delete this.vars.d2;
@@ -108,7 +115,7 @@ BluetoothTag.prototype.scan = function () {
 
             if (obj.did) {
                 var device = self.registerDevice(data.uuid, 0, obj.did);
-                device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_')
+                device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
                 device.DA = obj.value;
                 self.sendData(device);
             }
@@ -119,7 +126,7 @@ BluetoothTag.prototype.scan = function () {
 };
 
 BluetoothTag.prototype.processSoundDevice = function (data) {
-    var device = self.registerSoundDevice(data.uuid, 0, SOUND_ID);
+    var device = this.registerSoundDevice(data.uuid, 0, SOUND_ID);
     device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
     device.DA = '';
     if (!device.emited) {
@@ -153,7 +160,7 @@ BluetoothTag.prototype.processPresenceDevice = function (data) {
 };
 
 BluetoothTag.prototype.processDistanceDevice = function (data) {
-    var device = self.registerDevice(data.uuid, 0, DISTANCE_ID);
+    var device = this.registerDevice(data.uuid, 0, DISTANCE_ID);
     device.P = [data.uuid, 0, PORTABLE_TAG_ID].join('_');
     device.DA = '';
     this.sendData(device);
@@ -252,13 +259,13 @@ function SoundDevice(G, V, D) {
                     characteristics[characteristicIndex].on('write', function () {
                         peripheral.disconnect();
                     });
-                    characteristics[characteristicIndex].write([7, 5, 0, 0, 0, 2, 3, dat], true, function (error) {
+                    var Concentrate = new concentrate();
+
+                    var data = Concentrate().uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
+                    characteristics[characteristicIndex].write(data, true, function (error) {
                         if (error) {
                             return debug(error);
                         }
-                        var Concentrate = new concentrate();
-                        var payload = Concentrate.uint8(7).string(PORTABLE_TAG_ID, "utf8").uint8(3).uint8(dat).result();
-                        characteristics[characteristicIndex].write(payload, true);
                     });
                 });
                 services[serviceIndex].discoverIncludedServices();
