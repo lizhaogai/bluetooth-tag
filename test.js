@@ -21,6 +21,7 @@ d.emit = function (channel, value) {
         value.emit = function (channel, value) {
 //            console.log('Device.emit', channel, value);
             if (value && value.D == 215) {
+                console.log('Device.emit', channel, value);
                 console.log('Send Sound Command');
                 value.write(1);
             }
