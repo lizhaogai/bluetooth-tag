@@ -19,3 +19,6 @@ doc
 bower_components
 components
 config-snapshot.json
+css.js
+services.js
+t.js

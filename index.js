@@ -260,32 +260,43 @@ function SoundDevice(G, V, D) {
 
             peripheral.on('servicesDiscover', function (services) {
                 debug("Service Discover");
-                var serviceIndex = 0;
+                var isSend = false;
+                _.forEach(services, function (service) {
+                    if (service.uuid.toLowerCase() == "fff0") {
+                        service.on('includedServicesDiscover', function (includedServiceUuids) {
+                            this.discoverCharacteristics();
+                        });
 
-                services[serviceIndex].on('includedServicesDiscover', function (includedServiceUuids) {
-                    this.discoverCharacteristics();
+                        service.on('characteristicsDiscover', function (characteristics) {
+                            debug("Characteristics Discover");
+                            debug(characteristics);
+
+
+                            _.forEach(characteristics, function (characteristic) {
+                                if (characteristic.uuid.toLowerCase() == "fff1") {
+                                    characteristic.on('write', function () {
+                                        debug("Write value");
+                                        peripheral.disconnect();
+                                    });
+                                    var Concentrate = new concentrate();
+
+                                    var data = Concentrate.uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
+                                    characteristic.write(data, true, function (error) {
+                                        if (error) {
+                                            return debug(error);
+                                        }
+                                    });
+                                }
+                            });
+
+                        });
+                        service.discoverIncludedServices();
+                    }
                 });
-
-                services[serviceIndex].on('characteristicsDiscover', function (characteristics) {
-                    debug("Characteristics Discover");
-                    debug(characteristics);
-                    var characteristicIndex = 0;
-                    characteristics[characteristicIndex].on('write', function () {
-                        debug("Write value");
-                        peripheral.disconnect();
-                    });
-                    var Concentrate = new concentrate();
-
-                    var data = Concentrate.uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
-                    characteristics[characteristicIndex].write(data, true, function (error) {
-                        if (error) {
-                            return debug(error);
-                        }
-                    });
-                });
-                services[serviceIndex].discoverIncludedServices();
+                if (!isSend) {
+                    peripheral.disconnect();
+                }
             });
-
             peripheral.connect();
         }
     }
