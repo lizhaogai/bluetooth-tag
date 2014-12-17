@@ -16,16 +16,13 @@ var d = new (require('./index'))(opts, {
 d.emit = function (channel, value) {
     console.log('Driver.emit', channel, value);
 
-    var sendSoundCommand = true;
+//    var sendSoundCommand = true;
     if (channel == 'register') {
         value.emit = function (channel, value) {
 //            console.log('Device.emit', channel, value);
             if (value && value.D == 215) {
-                if (sendSoundCommand) {
-                    console.log('Send Sound Command');
-                    value.write(1);
-                    sendSoundCommand = false;
-                }
+                console.log('Send Sound Command');
+                value.write(1);
             }
         };
     }

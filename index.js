@@ -268,6 +268,7 @@ function SoundDevice(G, V, D) {
 
                 services[serviceIndex].on('characteristicsDiscover', function (characteristics) {
                     debug("Characteristics Discover");
+                    debug(characteristics);
                     var characteristicIndex = 0;
                     characteristics[characteristicIndex].on('write', function () {
                         debug("Write value");
@@ -275,7 +276,7 @@ function SoundDevice(G, V, D) {
                     });
                     var Concentrate = new concentrate();
 
-                    var data = Concentrate().uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
+                    var data = Concentrate.uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
                     characteristics[characteristicIndex].write(data, true, function (error) {
                         if (error) {
                             return debug(error);
