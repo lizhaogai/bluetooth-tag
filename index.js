@@ -243,63 +243,83 @@ function SoundDevice(G, V, D) {
     this.G = G.toString() || "0";
     this.D = parseInt(D) || undefined;
 
+    this.hasListeners = false;
+
     this.write = function (dat) {
         var uuid = this.G;
         var peripheral = peripherals[uuid];
         if (peripheral) {
+            if (!self.hasListeners) {
+                self.hasListeners = true;
+                peripheral.on('connect', function () {
+                    debug(peripheral.uuid + ":connected");
+                    this.updateRssi();
+                });
 
-            peripheral.on('connect', function () {
-                this.updateRssi();
-            });
+                peripheral.on('disconnect', function () {
+                    debug(peripheral.uuid + ":disconnected");
+                });
 
-            peripheral.on('disconnect', function () {
-            });
+                peripheral.on('rssiUpdate', function (rssi) {
+                    this.discoverServices();
+                });
 
-            peripheral.on('rssiUpdate', function (rssi) {
-                this.discoverServices();
-            });
-
-            peripheral.on('servicesDiscover', function (services) {
-                debug("Service Discover");
-                var isSend = false;
-                _.forEach(services, function (service) {
-                    if (service.uuid.toLowerCase() == "fff0") {
-                        debug("Start discover characteristics");
-//                        service.on('includedServicesDiscover', function (includedServiceUuids) {
-//                            debug(includedServiceUuids);
-//                            this.discoverCharacteristics();
-//                        });
-
-                        service.on('characteristicsDiscover', function (characteristics) {
-                            debug("Characteristics Discover");
-                            debug(characteristics);
-                            _.forEach(characteristics, function (characteristic) {
-                                if (characteristic.uuid.toLowerCase() == "fff1") {
-                                    characteristic.on('write', function () {
-                                        debug("Write value");
-                                        peripheral.disconnect();
-                                    });
-                                    var Concentrate = new concentrate();
-
-                                    var data = Concentrate.uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
-                                    characteristic.write(data, true, function (error) {
-                                        if (error) {
-                                            return debug(error);
-                                        }
-                                    });
-                                }
+                peripheral.on('servicesDiscover', function (services) {
+                    debug("Service Discover");
+                    var isSend = false;
+                    _.forEach(services, function (service) {
+                        if (service.uuid.toLowerCase() == "fff0") {
+                            debug("Start discover characteristics");
+                            service.on('includedServicesDiscover', function (includedServiceUuids) {
+                                debug("IncludedServices Discoverd");
+                                this.discoverCharacteristics();
                             });
 
-                        });
+                            service.on('characteristicsDiscover', function (characteristics) {
+                                debug("Characteristics Discover");
+                                debug(characteristics);
+                                _.forEach(characteristics, function (characteristic) {
+                                    if (characteristic.uuid.toLowerCase() == "fff1") {
+                                        characteristic.on('write', function () {
+                                            debug("Write value");
+                                            isSend = true;
+                                            peripheral.disconnect();
+                                        });
+                                        var Concentrate = new concentrate();
 
-                        service.discoverCharacteristics();
-//                        service.discoverIncludedServices();
-                    }
+                                        var data = Concentrate.uint8(7).uint8(5).uint8(0).uint8(0).uint8(0).uint8(2).uint8(3).uint8(dat).result();
+                                        characteristic.write(data, true, function (error) {
+                                            if (error) {
+                                                return debug(error);
+                                            }
+                                        });
+                                    }
+                                });
+
+                            });
+
+                            service.discoverIncludedServices();
+                        }
+                    });
+                    delay(5000)(function () {
+                        if (!isSend) {
+                            peripheral.disconnect();
+                        }
+                    });
+                    function delay(interval) {
+                        var timeout = 0;
+
+                        return function (time, callback) {
+                            if (typeof time === "function") {
+                                callback = time;
+                                time = null;
+                            }
+                            timeout += (time || interval);
+                            setTimeout(callback, timeout);
+                        };
+                    };
                 });
-                if (!isSend) {
-                    peripheral.disconnect();
-                }
-            });
+            }
             peripheral.connect();
         }
     }

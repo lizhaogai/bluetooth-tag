@@ -22,30 +22,15 @@ d.emit = function (channel, value) {
 //            console.log('Device.emit', channel, value);
             if (value && value.D == 215) {
                 if (sendSoundCommand) {
-                    console.log('Delay to send command');
-                    delay(50000)(function () {
+                    setInterval(function () {
                         console.log('Send Sound Command');
                         value.write(1);
-                    });
+                    }, 10000);
                     sendSoundCommand = false;
                 }
             }
         };
     }
-};
-
-
-function delay(interval) {
-    var timeout = 0;
-
-    return function (time, callback) {
-        if (typeof time === "function") {
-            callback = time;
-            time = null;
-        }
-        timeout += (time || interval);
-        setTimeout(callback, timeout);
-    };
 };
 
 d.save = function () {
