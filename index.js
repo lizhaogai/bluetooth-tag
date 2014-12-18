@@ -5,6 +5,7 @@ var debug = require('debug')('bluetooth-tag');
 var dissolve = require('dissolve');
 var concentrate = require('concentrate');
 var child = require('child_process');
+var _ = require('underscore');
 
 var PORTABLE_TAG_ID = 50002;
 var PRESENCE_ID = 263;
@@ -263,15 +264,15 @@ function SoundDevice(G, V, D) {
                 var isSend = false;
                 _.forEach(services, function (service) {
                     if (service.uuid.toLowerCase() == "fff0") {
-                        service.on('includedServicesDiscover', function (includedServiceUuids) {
-                            this.discoverCharacteristics();
-                        });
+                        debug("Start discover characteristics");
+//                        service.on('includedServicesDiscover', function (includedServiceUuids) {
+//                            debug(includedServiceUuids);
+//                            this.discoverCharacteristics();
+//                        });
 
                         service.on('characteristicsDiscover', function (characteristics) {
                             debug("Characteristics Discover");
                             debug(characteristics);
-
-
                             _.forEach(characteristics, function (characteristic) {
                                 if (characteristic.uuid.toLowerCase() == "fff1") {
                                     characteristic.on('write', function () {
@@ -290,7 +291,9 @@ function SoundDevice(G, V, D) {
                             });
 
                         });
-                        service.discoverIncludedServices();
+
+                        service.discoverCharacteristics();
+//                        service.discoverIncludedServices();
                     }
                 });
                 if (!isSend) {
